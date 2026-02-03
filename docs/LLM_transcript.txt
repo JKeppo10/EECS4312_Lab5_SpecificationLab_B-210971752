@@ -1,10 +1,632 @@
-## Student Name:
-## Student ID: 
+## Student Name: Joshua Keppo   
+## Student ID: 210971752
 
-Prompt 1: "Copy paste your question"
-LLM Response 1: "Copy paste LLMs response"
+Prompt 1: "## Student Name:Joshua Keppo
+## Student ID: 210971752
+
+"""
+Stub file for the is allocation feasible exercise.
+
+Implement the function `is_allocation_feasible` to  Determine whether a set of resource requests can be satisfied 
+given limited capacities. Take int account any possible constraints. See the lab handout
+for full requirements.
+"""
+    
+from typing import Dict, List, Union
+
+Number = Union[int, float]
+
+
+def is_allocation_feasible(
+    resources: Dict[str, Number],
+    requests: List[Dict[str, Number]]
+) -> bool:
+    """
+    Determine whether a set of resource requests can be satisfied given limited capacities.
+
+    Args:
+        resources : Dict[str, Number], Mapping from resource name to total available capacity.
+        requests : List[Dict[str, Number]], List of requests. Each request is a mapping from resource name to the amount required.
+
+    Returns:
+        True if the allocation is feasible, False otherwise.
+
+    """
+    # TODO: Implement this function
+    raise NotImplementedError("suggest_slots function has not been implemented yet") Help me fill this out."
+LLM Response 1: "I'll help you implement the is_allocation_feasible function. This function checks whether a set of resource requests can be satisfied given limited capacities. Let me implement this:
+python
+
+from typing import Dict, List, Union
+
+Number = Union[int, float]
+
+
+def is_allocation_feasible(
+    resources: Dict[str, Number],
+    requests: List[Dict[str, Number]]
+) -> bool:
+    """
+    Determine whether a set of resource requests can be satisfied given limited capacities.
+
+    Args:
+        resources : Dict[str, Number], Mapping from resource name to total available capacity.
+        requests : List[Dict[str, Number]], List of requests. Each request is a mapping from resource name to the amount required.
+
+    Returns:
+        True if the allocation is feasible, False otherwise.
+
+    """
+    # Create a dictionary to track total usage for each resource
+    total_used = {resource: 0 for resource in resources}
+    
+    # Process each request
+    for request in requests:
+        for resource, amount in request.items():
+            # Check if the resource exists in available resources
+            if resource not in resources:
+                # Resource is requested but not available
+                return False
+            
+            # Check if amount is valid (non-negative)
+            if amount < 0:
+                return False
+            
+            # Add to total used for this resource
+            total_used[resource] += amount
+            
+            # Check if we've exceeded available capacity
+            if total_used[resource] > resources[resource]:
+                return False
+    
+    # Also check if there are any negative values in resources
+    for resource, amount in resources.items():
+        if amount < 0:
+            return False
+    
+    return True
+
+However, there are a few important considerations that might affect the implementation based on the exact requirements:
+
+    Alternative approach with validation checks first (more efficient if many requests):
+
+python
+
+def is_allocation_feasible(
+    resources: Dict[str, Number],
+    requests: List[Dict[str, Number]]
+) -> bool:
+    """
+    Determine whether a set of resource requests can be satisfied given limited capacities.
+    """
+    # First validate that all resources have non-negative values
+    for resource, amount in resources.items():
+        if amount < 0:
+            return False
+    
+    # Create a dictionary to track total usage for each resource
+    total_used = {resource: 0 for resource in resources}
+    
+    # Process each request
+    for request in requests:
+        for resource, amount in request.items():
+            # Check if the resource exists and amount is non-negative
+            if resource not in resources or amount < 0:
+                return False
+            
+            # Add to total used
+            total_used[resource] += amount
+            
+            # Check capacity constraint
+            if total_used[resource] > resources[resource]:
+                return False
+    
+    return True
+
+    Version with more detailed error messages (for debugging):
+
+python
+
+def is_allocation_feasible(
+    resources: Dict[str, Number],
+    requests: List[Dict[str, Number]]
+) -> bool:
+    """
+    Determine whether a set of resource requests can be satisfied given limited capacities.
+    """
+    # Initialize usage tracker
+    total_used = {resource: 0 for resource in resources}
+    
+    # Check resource validity
+    for resource, amount in resources.items():
+        if amount < 0:
+            # print(f"Error: Resource {resource} has negative capacity: {amount}")
+            return False
+    
+    # Process each request
+    for i, request in enumerate(requests):
+        for resource, amount in request.items():
+            # Check resource existence
+            if resource not in resources:
+                # print(f"Error: Request {i} asks for non-existent resource: {resource}")
+                return False
+            
+            # Check request validity
+            if amount < 0:
+                # print(f"Error: Request {i} asks for negative amount of {resource}: {amount}")
+                return False
+            
+            # Update usage and check constraints
+            total_used[resource] += amount
+            if total_used[resource] > resources[resource]:
+                # print(f"Error: Resource {resource} exceeded. Available: {resources[resource]}, Requested: {total_used[resource]}")
+                return False
+    
+    return True
+
+Key points about the implementation:
+
+    Resource existence check: Each requested resource must exist in the resources dictionary.
+
+    Non-negative validation: Both resource capacities and request amounts must be non-negative.
+
+    Capacity constraint: The sum of all requests for a resource cannot exceed its available capacity.
+
+    Aggregation: We sum up all requests for each resource before checking against capacity.
+
+    Early termination: We return False as soon as any constraint is violated.
+
+The function returns True only if all requests can be satisfied without exceeding any resource capacity, and all inputs are valid (non-negative amounts, existing resources).
+
+Choose the version that best fits your needs. The first version is the most straightforward implementation of the requirements."
 
 --------------------------------------------------
-Prompt 2: "Copy paste your question"
-LLM Response 2: "Copy paste LLMs response"
+Prompt 2: "It needs to be able to pass these test cases: ## Student Name: Joshua Keppo  
+## Student ID: 210971752
+
+"""
+Public test suite for the meeting slot suggestion exercise.
+
+Students can run these tests locally to check basic correctness of their implementation.
+The hidden test suite used for grading contains additional edge cases and will not be
+available to students.
+"""
+from solution import is_allocation_feasible
+import pytest
+
+
+def test_basic_feasible_single_resource():
+    # Basic Feasible Single-Resource
+    # Constraint: total demand <= capacity
+    # Reason: check basic functional requirement
+    resources = {'cpu': 10}
+    requests = [{'cpu': 3}, {'cpu': 4}, {'cpu': 3}]
+    assert is_allocation_feasible(resources, requests) is True
+
+def test_multi_resource_infeasible_one_overloaded():
+    # Multi-Resource Infeasible (one overload)
+    # Constraint: one resource exceeds capacity
+    # Reason: check detection of per-resource infeasibility
+    resources = {'cpu': 8, 'mem': 30}
+    requests = [{'cpu': 2, 'mem': 8}, {'cpu': 3, 'mem': 10}, {'cpu': 3, 'mem': 14}]
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_missing_resource_in_availability():
+    # Missing Resource in Requests
+    # Constraint: request references unavailable resource
+    # Reason: allocation must be infeasible
+    resources = {'cpu': 10}
+    requests = [{'cpu': 2}, {'gpu': 1}]
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_non_dict_request_raises():
+    # Non-Dict Request Raises Error
+    # Constraint: structural validation
+    # Reason: request must be a dict
+    resources = {'cpu': 5}
+    requests = [{'cpu': 2}, ['mem', 1]]  # malformed request
+    with pytest.raises(ValueError):
+        is_allocation_feasible(resources, requests)
+
+"""TODO: Add at least 5 additional test cases to test your implementation."""
+Help me do the to do as well."
+LLM Response 2: "Looking at the test cases, I need to adjust my implementation. The test test_non_dict_request_raises expects a ValueError to be raised when a request is not a dictionary. Let me revise the implementation to handle this correctly and also add the 5 additional test cases.
+
+Here's the corrected implementation:
+python
+
+from typing import Dict, List, Union
+
+Number = Union[int, float]
+
+
+def is_allocation_feasible(
+    resources: Dict[str, Number],
+    requests: List[Dict[str, Number]]
+) -> bool:
+    """
+    Determine whether a set of resource requests can be satisfied given limited capacities.
+
+    Args:
+        resources : Dict[str, Number], Mapping from resource name to total available capacity.
+        requests : List[Dict[str, Number]], List of requests. Each request is a mapping from resource name to the amount required.
+
+    Returns:
+        True if the allocation is feasible, False otherwise.
+
+    Raises:
+        ValueError: If any request is not a dictionary.
+    """
+    # Validate that all requests are dictionaries
+    for i, request in enumerate(requests):
+        if not isinstance(request, dict):
+            raise ValueError(f"Request at index {i} is not a dictionary")
+    
+    # Check that all resource capacities are non-negative
+    for resource, capacity in resources.items():
+        if capacity < 0:
+            return False
+    
+    # Create a dictionary to track total usage for each resource
+    total_used = {resource: 0 for resource in resources}
+    
+    # Process each request
+    for request in requests:
+        for resource, amount in request.items():
+            # Check if the resource exists in available resources
+            if resource not in resources:
+                return False
+            
+            # Check if amount is valid (non-negative)
+            if amount < 0:
+                return False
+            
+            # Add to total used for this resource
+            total_used[resource] += amount
+            
+            # Check if we've exceeded available capacity
+            if total_used[resource] > resources[resource]:
+                return False
+    
+    return True
+
+Now for the 5 additional test cases:
+python
+
+# TODO: Add at least 5 additional test cases to test your implementation.
+
+def test_exact_capacity_allocation():
+    # Exact Capacity Allocation
+    # Constraint: total demand exactly equals capacity
+    # Reason: check boundary condition
+    resources = {'cpu': 10, 'memory': 20}
+    requests = [{'cpu': 5, 'memory': 10}, {'cpu': 5, 'memory': 10}]
+    assert is_allocation_feasible(resources, requests) is True
+
+def test_zero_resources():
+    # Zero Resources
+    # Constraint: no resources available
+    # Reason: check handling of zero capacities
+    resources = {'cpu': 0, 'memory': 0}
+    requests = [{'cpu': 0}, {'memory': 0}]  # Even zero requests should be OK
+    assert is_allocation_feasible(resources, requests) is True
+    
+    resources = {'cpu': 0}
+    requests = [{'cpu': 1}]  # Request > 0 when capacity is 0
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_negative_request_amount():
+    # Negative Request Amount
+    # Constraint: negative amounts in requests
+    # Reason: negative requests should be invalid
+    resources = {'cpu': 10}
+    requests = [{'cpu': 5}, {'cpu': -1}]  # Negative request
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_empty_requests():
+    # Empty Requests
+    # Constraint: no requests
+    # Reason: empty request list should always be feasible
+    resources = {'cpu': 10, 'memory': 20}
+    requests = []  # Empty list of requests
+    assert is_allocation_feasible(resources, requests) is True
+
+def test_mixed_positive_and_zero_capacities():
+    # Mixed Positive and Zero Capacities
+    # Constraint: some resources have zero capacity
+    # Reason: test mixed capacity scenarios
+    resources = {'cpu': 10, 'memory': 0, 'disk': 5}
+    requests = [
+        {'cpu': 3, 'disk': 2},
+        {'cpu': 2, 'disk': 1},
+        {'cpu': 5, 'disk': 2}  # Total cpu=10, disk=5, memory not requested
+    ]
+    assert is_allocation_feasible(resources, requests) is True
+    
+    # Try to request memory which has 0 capacity
+    resources = {'cpu': 10, 'memory': 0}
+    requests = [{'cpu': 5, 'memory': 1}]  # Request memory with 0 capacity
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_fractional_resources():
+    # Fractional Resources
+    # Constraint: resources can be fractional (floats)
+    # Reason: test with non-integer resources
+    resources = {'cpu': 7.5, 'memory': 12.5}
+    requests = [
+        {'cpu': 2.5, 'memory': 3.5},
+        {'cpu': 3.0, 'memory': 4.0},
+        {'cpu': 2.0, 'memory': 5.0}  # Total: cpu=7.5, memory=12.5
+    ]
+    assert is_allocation_feasible(resources, requests) is True
+    
+    # Slightly over the limit
+    requests = [
+        {'cpu': 2.5, 'memory': 3.5},
+        {'cpu': 3.0, 'memory': 4.0},
+        {'cpu': 2.1, 'memory': 5.0}  # Total: cpu=7.6 > 7.5
+    ]
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_negative_resource_capacity():
+    # Negative Resource Capacity
+    # Constraint: resource with negative capacity
+    # Reason: negative capacity should make allocation infeasible
+    resources = {'cpu': -5, 'memory': 10}
+    requests = [{'cpu': 2}, {'memory': 5}]
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_large_number_of_requests():
+    # Large Number of Requests
+    # Constraint: many small requests
+    # Reason: test with many requests accumulating to exact capacity
+    resources = {'cpu': 1000}
+    requests = [{'cpu': 1} for _ in range(1000)]  # 1000 requests of 1 each
+    assert is_allocation_feasible(resources, requests) is True
+    
+    # One more request should make it fail
+    requests.append({'cpu': 1})
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_partial_resource_requests():
+    # Partial Resource Requests
+    # Constraint: not all requests ask for all resources
+    # Reason: test when some requests only ask for subset of resources
+    resources = {'cpu': 10, 'memory': 20, 'disk': 30}
+    requests = [
+        {'cpu': 5, 'memory': 10},  # No disk
+        {'disk': 20},  # Only disk
+        {'cpu': 5, 'memory': 10, 'disk': 10}  # All three
+    ]
+    assert is_allocation_feasible(resources, requests) is True
+    
+    # Now exceed one resource
+    requests = [
+        {'cpu': 5, 'memory': 10},
+        {'disk': 20},
+        {'cpu': 6, 'memory': 10, 'disk': 10}  # cpu=11 > 10
+    ]
+    assert is_allocation_feasible(resources, requests) is False
+
+These additional test cases cover:
+
+    Exact capacity allocation - boundary condition where total demand equals capacity
+
+    Zero resources - handling of zero capacities and zero requests
+
+    Negative request amounts - validation of request values
+
+    Empty requests - edge case with no requests
+
+    Fractional resources - handling of float values
+
+    Negative resource capacity - invalid resource values
+
+    Large number of requests - performance and accumulation
+
+    Partial resource requests - requests asking for different subsets of resources
+
+You can choose any 5 of these for your TODO section, but I've provided 8 to give you options. Each tests a different aspect of the implementation."
+--------------------------------------------------
+Prompt 3: "Okay help me with the 5 more test cases please: ## Student Name: Joshua Keppo  
+## Student ID: 210971752
+
+"""
+Public test suite for the meeting slot suggestion exercise.
+
+Students can run these tests locally to check basic correctness of their implementation.
+The hidden test suite used for grading contains additional edge cases and will not be
+available to students.
+"""
+from src.solution import is_allocation_feasible
+import pytest
+
+
+def test_basic_feasible_single_resource():
+    # Basic Feasible Single-Resource
+    # Constraint: total demand <= capacity
+    # Reason: check basic functional requirement
+    resources = {'cpu': 10}
+    requests = [{'cpu': 3}, {'cpu': 4}, {'cpu': 3}]
+    assert is_allocation_feasible(resources, requests) is True
+
+def test_multi_resource_infeasible_one_overloaded():
+    # Multi-Resource Infeasible (one overload)
+    # Constraint: one resource exceeds capacity
+    # Reason: check detection of per-resource infeasibility
+    resources = {'cpu': 8, 'mem': 30}
+    requests = [{'cpu': 2, 'mem': 8}, {'cpu': 3, 'mem': 10}, {'cpu': 3, 'mem': 14}]
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_missing_resource_in_availability():
+    # Missing Resource in Requests
+    # Constraint: request references unavailable resource
+    # Reason: allocation must be infeasible
+    resources = {'cpu': 10}
+    requests = [{'cpu': 2}, {'gpu': 1}]
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_non_dict_request_raises():
+    # Non-Dict Request Raises Error
+    # Constraint: structural validation
+    # Reason: request must be a dict
+    resources = {'cpu': 5}
+    requests = [{'cpu': 2}, ['mem', 1]]  # malformed request
+    with pytest.raises(ValueError):
+        is_allocation_feasible(resources, requests)
+
+"""TODO: Add at least 5 additional test cases to test your implementation.""""
+LLM Response 3: "def test_exact_capacity_boundary_case():
+    """
+    Test exact capacity allocation (boundary case).
+    Constraint: Total demand exactly equals available capacity.
+    Reason: Test edge case where sum equals capacity (should be feasible).
+    """
+    resources = {'cpu': 10, 'memory': 20, 'disk': 30}
+    requests = [
+        {'cpu': 4, 'memory': 8, 'disk': 12},
+        {'cpu': 3, 'memory': 6, 'disk': 10},
+        {'cpu': 3, 'memory': 6, 'disk': 8}
+    ]
+    # Total: cpu=10, memory=20, disk=30 (exact match)
+    assert is_allocation_feasible(resources, requests) is True
+
+def test_mixed_valid_invalid_requests():
+    """
+    Test mixed scenario with some valid and some invalid aspects.
+    Constraint: Some requests exceed capacity while others don't.
+    Reason: Test that any infeasibility makes overall allocation infeasible.
+    """
+    resources = {'cpu': 15, 'memory': 25, 'gpu': 2}
+    requests = [
+        {'cpu': 5, 'memory': 10, 'gpu': 1},  # Valid
+        {'cpu': 6, 'memory': 8, 'gpu': 1},   # Valid (total: cpu=11, memory=18, gpu=2)
+        {'cpu': 5, 'memory': 8}              # Would be valid alone, but gpu is at capacity
+    ]
+    # This should be infeasible because the last request doesn't ask for gpu,
+    # but that's fine. Actually check if this exceeds cpu or memory:
+    # cpu total = 5+6+5=16 > 15, so should be False
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_zero_and_empty_values():
+    """
+    Test handling of zero values and empty requests.
+    Constraint: Zero quantities and empty dictionaries.
+    Reason: Test edge cases with minimal/empty values.
+    """
+    # Test 1: Zero resource request
+    resources = {'cpu': 10}
+    requests = [{'cpu': 0}, {'cpu': 0}, {'cpu': 0}]
+    assert is_allocation_feasible(resources, requests) is True
+    
+    # Test 2: Empty request dictionary
+    resources = {'cpu': 10, 'memory': 20}
+    requests = [{'cpu': 5}, {}, {'memory': 10}]  # Empty dict in middle
+    assert is_allocation_feasible(resources, requests) is True
+    
+    # Test 3: Request for zero of non-existent resource (should fail)
+    resources = {'cpu': 10}
+    requests = [{'cpu': 5}, {'gpu': 0}]  # gpu doesn't exist even though amount is 0
+    assert is_allocation_feasible(resources, requests) is False
+
+def test_fractional_and_float_values():
+    """
+    Test with fractional/float values.
+    Constraint: Resources and requests can have float values.
+    Reason: Test non-integer arithmetic and precision.
+    """
+    # Test with exact float values
+    resources = {'cpu': 7.5, 'memory': 12.25, 'disk': 5.0}
+    requests = [
+        {'cpu': 2.25, 'memory': 3.75, 'disk': 1.5},
+        {'cpu': 3.0, 'memory': 4.5, 'disk': 2.0},
+        {'cpu': 2.25, 'memory': 4.0, 'disk': 1.5}  # Total: cpu=7.5, memory=12.25, disk=5.0
+    ]
+    assert is_allocation_feasible(resources, requests) is True
+    
+    # Test with slight overflow due to floating point
+    resources = {'cpu': 1.0}
+    requests = [{'cpu': 0.3}, {'cpu': 0.3}, {'cpu': 0.3}]  # 0.3*3 = 0.899999... < 1.0
+    # In practice 0.3*3 = 0.8999999999999999 which is less than 1.0
+    assert is_allocation_feasible(resources, requests) is True
+    
+    # Test with actual overflow
+    requests = [{'cpu': 0.3}, {'cpu': 0.3}, {'cpu': 0.4}]  # 0.3+0.3+0.4 = 1.0
+    assert is_allocation_feasible(resources, requests) is True
+
+def test_negative_values_validation():
+    """
+    Test validation of negative values.
+    Constraint: Negative amounts should be rejected.
+    Reason: Ensure proper validation of input values.
+    """
+    # Test 1: Negative resource capacity
+    resources = {'cpu': -5, 'memory': 10}
+    requests = [{'cpu': 3}, {'memory': 5}]
+    assert is_allocation_feasible(resources, requests) is False
+    
+    # Test 2: Negative request amount
+    resources = {'cpu': 10, 'memory': 20}
+    requests = [{'cpu': 5}, {'cpu': -2, 'memory': 10}]  # Negative cpu request
+    assert is_allocation_feasible(resources, requests) is False
+    
+    # Test 3: Mixed negative and positive in same request
+    resources = {'cpu': 10, 'memory': 20}
+    requests = [{'cpu': 5, 'memory': -1}]  # Negative memory
+    assert is_allocation_feasible(resources, requests) is False
+    
+    # Test 4: Zero is okay, negative is not
+    resources = {'cpu': 10}
+    requests = [{'cpu': 0}]  # Zero is valid
+    assert is_allocation_feasible(resources, requests) is True
+    requests = [{'cpu': -0.0}]  # Negative zero (float) - should be treated as 0
+    # Note: -0.0 == 0.0 is True in Python, so this might pass
+    # This tests how your implementation handles negative zero
+    result = is_allocation_feasible(resources, requests)
+    # Either True or False could be acceptable depending on implementation"
+--------------------------------------------------
+Prompt 4: "can you provide me with 6 acceptance criteria for the given system using the Given-When-Then format. example "Given the user provides no existing events, when the meeting duration is 30 minutes on a Monday, then the earliest suggested slot is 09:00" (the example has nothing to do with the given system)."
+LLM Response 4: "can you provide me with 6 acceptance criteria for the given system using the Given-When-Then format. example "Given the user provides no existing events, when the meeting duration is 30 minutes on a Monday, then the earliest suggested slot is 09:00" (the example has nothing to do with the given system)."
+--------------------------------------------------
+Prompt 2: "Can you simpfy them"
+LLM Response 2: "cHere are 6 simplified acceptance criteria in Given-When-Then format:
+
+1. **Enough Resources**
+   Given enough resources for all requests
+   When checking if allocation is possible
+   Then return True
+
+2. **Not Enough Resources**
+   Given more requests than available resources
+   When checking if allocation is possible
+   Then return False
+
+3. **Unknown Resource**
+   Given requests for resources that don't exist
+   When checking if allocation is possible
+   Then return False
+
+4. **No Requests**
+   Given available resources but no requests
+   When checking if allocation is possible
+   Then return True
+
+5. **Exact Match**
+   Given requests that exactly match available resources
+   When checking if allocation is possible
+   Then return True
+
+6. **Bad Request Format**
+   Given a request that's not a dictionary
+   When checking if allocation is possible
+   Then show an error
+
+Even simpler:
+
+1. **Has enough?** → True
+2. **Not enough?** → False  
+3. **Unknown resource?** → False
+4. **No requests?** → True
+5. **Perfect fit?** → True
+6. **Bad format?** → Error"
 --------------------------------------------------
