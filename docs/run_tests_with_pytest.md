@@ -68,7 +68,7 @@ pytest -v
 To run a single test function, use the `-k` option:
 
 ```bash
-pytest -v -k test_name
+pyest -v -k test_name
 ```
 
 ---

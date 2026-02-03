@@ -588,7 +588,7 @@ def test_negative_values_validation():
 Prompt 4: "can you provide me with 6 acceptance criteria for the given system using the Given-When-Then format. example "Given the user provides no existing events, when the meeting duration is 30 minutes on a Monday, then the earliest suggested slot is 09:00" (the example has nothing to do with the given system)."
 LLM Response 4: "can you provide me with 6 acceptance criteria for the given system using the Given-When-Then format. example "Given the user provides no existing events, when the meeting duration is 30 minutes on a Monday, then the earliest suggested slot is 09:00" (the example has nothing to do with the given system)."
 --------------------------------------------------
-Prompt 2: "Can you simpfy them"
+Prompt 5: "Can you simpfy them"
 LLM Response 2: "cHere are 6 simplified acceptance criteria in Given-When-Then format:
 
 1. **Enough Resources**
@@ -630,3 +630,235 @@ Even simpler:
 5. **Perfect fit?** → True
 6. **Bad format?** → Error"
 --------------------------------------------------
+prompt 6: "List 6 constraints and assumptions for the given system as simly as possible"
+response 6: " Here are 6 constraints and assumptions for the resource allocation system:
+
+**Constraints:**
+1. Can't use more than available
+2. Can't request resources that don't exist
+3. All amounts must be zero or positive
+4. Each request must be a dictionary
+
+**Assumptions:**
+5. Empty request list is always OK
+6. Resources are shared (not reserved per request)"
+--------------------------------------------------
+prompt 7: "do you think you need to modify this to cover wide hidden test case list? ## Student Name:Joshua Keppo
+## Student ID: 210971752
+
+"""
+Stub file for the is allocation feasible exercise.
+
+Implement the function `is_allocation_feasible` to  Determine whether a set of resource requests can be satisfied 
+given limited capacities. Take int account any possible constraints. See the lab handout
+for full requirements.
+"""
+    
+from typing import Dict, List, Union
+
+Number = Union[int, float]
+
+
+def is_allocation_feasible(
+    resources: Dict[str, Number],
+    requests: List[Dict[str, Number]]
+) -> bool:
+    """
+    Determine whether a set of resource requests can be satisfied given limited capacities.
+
+    Args:
+        resources : Dict[str, Number], Mapping from resource name to total available capacity.
+        requests : List[Dict[str, Number]], List of requests. Each request is a mapping from resource name to the amount required.
+
+    Returns:
+        True if the allocation is feasible, False otherwise.
+
+    Raises:
+        ValueError: If any request is not a dictionary.
+    """
+    # Validate that all requests are dictionaries
+    for i, request in enumerate(requests):
+        if not isinstance(request, dict):
+            raise ValueError(f"Request at index {i} is not a dictionary")
+    
+    # Check that all resource capacities are non-negative
+    for resource, capacity in resources.items():
+        if capacity < 0:
+            return False
+    
+    # Create a dictionary to track total usage for each resource
+    total_used = {resource: 0 for resource in resources}
+    
+    # Process each request
+    for request in requests:
+        for resource, amount in request.items():
+            # Check if the resource exists in available resources
+            if resource not in resources:
+                return False
+            
+            # Check if amount is valid (non-negative)
+            if amount < 0:
+                return False
+            
+            # Add to total used for this resource
+            total_used[resource] += amount
+            
+            # Check if we've exceeded available capacity
+            if total_used[resource] > resources[resource]:
+                return False
+    
+    return True"
+response 6: "Looking at your implementation, I think it's actually quite good and covers most edge cases. However, let me check for some potential hidden test cases that might catch you:
+
+**Potential issues to check:**
+
+1. **Float precision**: `-0.0 == 0.0` is `True` in Python, but `-0.0 < 0` is `False` 
+2. **Zero resource with zero request**: Should return `True`
+3. **Empty resources dictionary**: What if `resources = {}`?
+4. **Request with no resources**: Empty dictionary `{}` in requests list
+5. **Very large numbers**: Could overflow?
+6. **Order of validation**: Should we check negative amounts before resource existence?
+
+Here are some modifications to make it more robust:
+
+```python
+from typing import Dict, List, Union
+
+Number = Union[int, float]
+
+
+def is_allocation_feasible(
+    resources: Dict[str, Number],
+    requests: List[Dict[str, Number]]
+) -> bool:
+    """
+    Determine whether a set of resource requests can be satisfied given limited capacities.
+
+    Args:
+        resources : Dict[str, Number], Mapping from resource name to total available capacity.
+        requests : List[Dict[str, Number]], List of requests. Each request is a mapping from resource name to the amount required.
+
+    Returns:
+        True if the allocation is feasible, False otherwise.
+
+    Raises:
+        ValueError: If any request is not a dictionary.
+    """
+    # Validate that all requests are dictionaries
+    for i, request in enumerate(requests):
+        if not isinstance(request, dict):
+            raise ValueError(f"Request at index {i} is not a dictionary")
+    
+    # Check that all resource capacities are non-negative
+    for resource, capacity in resources.items():
+        if capacity < 0:
+            return False
+    
+    # Handle empty resources dict - no resources available
+    if not resources:
+        # If no resources, only feasible if no requests OR all requests are empty
+        for request in requests:
+            if request:  # If any request asks for any resource (even if amount is 0)
+                return False
+        return True
+    
+    # Create a dictionary to track total usage for each resource
+    total_used = {resource: 0 for resource in resources}
+    
+    # Process each request
+    for request in requests:
+        for resource, amount in request.items():
+            # Check if amount is valid (non-negative)
+            # Using <= 0 comparison handles -0.0 case correctly
+            if amount < 0 or (amount == 0 and str(amount).startswith('-')):
+                return False
+            
+            # Check if the resource exists in available resources
+            if resource not in resources:
+                return False
+            
+            # Add to total used for this resource
+            total_used[resource] += amount
+            
+            # Check if we've exceeded available capacity (with tolerance for float precision)
+            # Use a small epsilon for float comparison
+            if isinstance(total_used[resource], float) or isinstance(resources[resource], float):
+                # For floats, use a small tolerance
+                if total_used[resource] > resources[resource] + 1e-10:
+                    return False
+            else:
+                # For integers, exact comparison
+                if total_used[resource] > resources[resource]:
+                    return False
+    
+    return True
+```
+
+**But actually, your original implementation is probably fine!** Most hidden tests would likely test:
+
+1. Basic functionality ✓ (you have it)
+2. Edge cases (zero, negative, empty) ✓ (you have it)
+3. Float values ✓ (you handle them)
+4. Invalid input validation ✓ (you have ValueError)
+5. Multiple resources ✓ (you have it)
+6. Partial resource requests ✓ (you handle them)
+
+**The only minor improvements I'd suggest:**
+
+```python
+def is_allocation_feasible(
+    resources: Dict[str, Number],
+    requests: List[Dict[str, Number]]
+) -> bool:
+    # Validate that all requests are dictionaries
+    for i, request in enumerate(requests):
+        if not isinstance(request, dict):
+            raise ValueError(f"Request at index {i} is not a dictionary")
+    
+    # Check that all resource capacities are non-negative
+    for resource, capacity in resources.items():
+        if capacity < 0:
+            return False
+    
+    # Initialize usage tracker
+    total_used = {resource: 0 for resource in resources}
+    
+    # Process each request
+    for request in requests:
+        for resource, amount in request.items():
+            # Check if the resource exists
+            if resource not in resources:
+                return False
+            
+            # Check if amount is valid (non-negative, including -0.0)
+            if amount < 0 or (amount == 0 and str(amount).startswith('-')):
+                return False
+            
+            # Update total and check capacity
+            total_used[resource] += amount
+            if total_used[resource] > resources[resource]:
+                return False
+    
+    return True
+```
+
+**Key changes from your original:**
+1. Added check for `-0.0` (though this is probably overkill)
+2. Kept the order: check resource existence first, then amount validity
+
+**Your original code is 95% there and should pass most tests.** The hidden tests might include:
+- `-0.0` as a request amount
+- Empty resources dictionary `{}`
+- Request for 0 of a non-existent resource
+- Very large numbers that don't cause overflow
+- Mixed int/float in same calculation
+
+But honestly, your implementation looks solid. If you want to be super safe, just add the `-0.0` check:
+
+```python
+# Instead of: if amount < 0:
+# Use:
+if amount < 0 or (amount == 0 and str(amount).startswith('-')):
+```
+
+Otherwise, I think you're good to go! "
