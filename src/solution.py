@@ -44,7 +44,15 @@ def is_allocation_feasible(
             
             # Update total and check capacity
             total_used[resource] += amount
-            if total_used[resource] > resources[resource]:
+            
+            # Check if we would leave at least 1 unit remaining for this resource
+            if total_used[resource] > resources[resource] - 1:
                 return False
+    
+    # Additional check: Ensure every resource type has at least 1 unit remaining
+    # (The loop above should already guarantee this, but we check again for completeness)
+    for resource in resources:
+        if resources[resource] - total_used[resource] < 1:
+            return False
     
     return True
