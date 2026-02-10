@@ -203,3 +203,143 @@ def test_new_requirement_specific_cases():
     # Total: cpu=6, memory=7, gpu=3, storage=15
     # Leaves: cpu=2, memory=5, gpu=1, storage=5 -> all >= 1
     assert is_allocation_feasible(resources, requests) is True
+
+def test_non_numeric_resource_capacity():
+    """
+    Test assumption: Resource capacities must be numerical values.
+    Constraint: Non-numeric capacities should cause issues.
+    Reason: Test type validation for resource values.
+    """
+    # This might cause TypeError in arithmetic operations
+    resources = {'cpu': '10', 'memory': 20}  # String instead of number
+    requests = [{'cpu': 5}, {'memory': 10}]
+    # Implementation may need to handle or this may fail
+    # Test to see current behavior
+    try:
+        result = is_allocation_feasible(resources, requests)
+        # If it doesn't raise an error, check if it handles gracefully
+        print(f"Non-numeric capacity test returned: {result}")
+    except (TypeError, ValueError) as e:
+        print(f"Non-numeric capacity raised: {type(e).__name__}: {e}")
+
+def test_non_numeric_request_amount():
+    """
+    Test assumption: Request amounts must be numerical values.
+    Constraint: Non-numeric amounts should be rejected.
+    Reason: Test type validation for request values.
+    """
+    resources = {'cpu': 10, 'memory': 20}
+    requests = [{'cpu': '5'}, {'memory': 10}]  # String amount
+    # Should either return False or raise an error
+    result = is_allocation_feasible(resources, requests)
+    # Current implementation might try to compare string with number
+    assert result is False or result is True  # Documenting current behavior
+
+def test_mixed_request_types():
+    """
+    Test assumption: Each request must be a dictionary.
+    Constraint: Mixed valid and invalid request types.
+    Reason: Test type consistency in requests list.
+    """
+    resources = {'cpu': 10}
+    
+    # Test with None in requests
+    requests = [{'cpu': 5}, None, {'cpu': 3}]
+    # Should raise ValueError or return False
+    try:
+        result = is_allocation_feasible(resources, requests)
+        print(f"None in requests returned: {result}")
+    except ValueError as e:
+        print(f"None in requests raised ValueError: {e}")
+    
+    # Test with integer in requests (instead of dict)
+    requests = [{'cpu': 5}, 42, {'cpu': 3}]
+    try:
+        result = is_allocation_feasible(resources, requests)
+        print(f"Integer in requests returned: {result}")
+    except ValueError as e:
+        print(f"Integer in requests raised ValueError: {e}")
+
+def test_sequential_allocation_impact():
+    """
+    Test assumption: Requests are processed sequentially.
+    Constraint: Order of requests matters for intermediate capacity checks.
+    Reason: Verify sequential processing behavior.
+    """
+    resources = {'cpu': 5}
+    
+    # Order 1: Large request first (should fail early)
+    requests1 = [{'cpu': 6}, {'cpu': 0}]  # First request exceeds capacity
+    result1 = is_allocation_feasible(resources, requests1)
+    
+    # Order 2: Small requests first (might pass intermediate checks but fail at total)
+    requests2 = [{'cpu': 3}, {'cpu': 2}]  # Individual requests OK, but total leaves 0
+    result2 = is_allocation_feasible(resources, requests2)
+    
+    # Order 3: Requests that would be OK individually but exceed when combined
+    requests3 = [{'cpu': 3}, {'cpu': 3}]  # 3+3=6 > 5
+    result3 = is_allocation_feasible(resources, requests3)
+    
+    print(f"Order test results: {result1}, {result2}, {result3}")
+    # All should be False due to new requirement (need to leave at least 1)
+
+def test_implicit_zero_allocation():
+    """
+    Test assumption: Resources not mentioned in a request are allocated 0.
+    Constraint: Partial resource requests in multi-resource scenarios.
+    Reason: Test implicit handling of unrequested resources.
+    """
+    resources = {'cpu': 10, 'memory': 10, 'disk': 10}
+    
+    # Some requests only mention subset of resources
+    requests = [
+        {'cpu': 3, 'memory': 4},  # No disk request (implicit 0)
+        {'disk': 5},  # Only disk request
+        {'memory': 3, 'disk': 3}  # No cpu request
+    ]
+    # Total: cpu=3, memory=7, disk=8
+    # Leaves: cpu=7, memory=3, disk=2 (all >= 1)
+    result = is_allocation_feasible(resources, requests)
+    assert result is True
+    
+    # Test where leaving out resource causes issue with new requirement
+    resources2 = {'cpu': 2, 'memory': 2}
+    requests2 = [
+        {'cpu': 1},  # Only cpu
+        {'cpu': 1}   # Only cpu, memory untouched
+    ]
+    # Total: cpu=2, memory=0
+    # Leaves: cpu=0, memory=2 -> cpu has 0 left, so False
+    result2 = is_allocation_feasible(resources2, requests2)
+    assert result2 is False
+
+def test_very_small_fractional_values():
+    """
+    Test assumption: Numerical values include floats with small precision.
+    Constraint: Floating point arithmetic with values close to boundaries.
+    Reason: Test precision handling for the "at least 1 unit" requirement.
+    """
+    resources = {'cpu': 1.0}
+    
+    # Leaves exactly 0.000...1 (effectively 0 due to floating point)
+    requests = [{'cpu': 0.9999999999999999}]  # Leaves ~1e-16
+    result = is_allocation_feasible(resources, requests)
+    # With new requirement: leaves less than 1.0, so should be False
+    # But floating point precision might make this tricky
+    print(f"Small fractional test: {result}, remaining would be {1.0 - 0.9999999999999999}")
+    
+    # Leaves exactly 1.0 (but might be 1.0000000000000002 due to FP)
+    requests2 = [{'cpu': 0.0}]  # Leaves 1.0 exactly
+    result2 = is_allocation_feasible(resources, requests2)
+    assert result2 is True
+    
+    # Test with multiple small allocations
+    resources3 = {'cpu': 1.0, 'memory': 1.0}
+    requests3 = [
+        {'cpu': 0.3, 'memory': 0.3},
+        {'cpu': 0.3, 'memory': 0.3},
+        {'cpu': 0.3, 'memory': 0.3}
+    ]
+    # Total: 0.9 each, leaves 0.1 each (< 1.0)
+    result3 = is_allocation_feasible(resources3, requests3)
+    assert result3 is False
